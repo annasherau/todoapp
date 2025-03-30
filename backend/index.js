@@ -45,7 +45,7 @@ const Task = mongoose.model("Task", taskSchema);
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 app.get('/home', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 
@@ -94,6 +94,135 @@ app.post('/tasks', async (req, res) => {
     }
 });
 
+
+//To retriieve tasks from the database and display them on the front end - (without users)
+
+app.get('/tasks', async (req, res) => {
+    try {
+        const response = await Task.find({});
+
+        console.log(response);
+        res.json(response);
+
+    } catch (error) {
+        console.error('Backend error:', error);
+        res.status(500).json({ error: 'Error grabbing tasks' });
+
+    }
+});
+
+
+// To complete task and move columns
+
+app.patch('/tasks/complete/:id', async (req, res) => {
+
+    try {
+        const { completed } = req.body;
+        const taskId = req.params.id;
+
+        const response = await Task.findByIdAndUpdate(taskId, { completed }, { new: true });
+
+        if (!response) {
+            return res.status(404).json({ message: 'Task not found' });
+
+        }
+
+        console.log(response);
+        res.json(response);
+
+    } catch (error) {
+        console.error('Error: ', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+
+});
+
+
+
+
+
+
+
+// To make the task "not complete" and move columns
+
+
+app.patch('/tasks/notComplete/:id', async (req, res) => {
+
+    try {
+        const { completed } = req.body;
+        const taskId = req.params.id;
+
+        const response = await Task.findByIdAndUpdate(taskId, { completed }, { new: false });
+
+        if (!response) {
+            return res.status(404).json({ message: 'Task not found' });
+
+        }
+
+        console.log(response);
+        res.json({ task: response, message: "Task set to 'Not Complete'" });
+
+    } catch (error) {
+        console.error('Error: ', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+
+
+});
+
+
+
+// To delete the task ↓
+
+app.delete('/tasks/:id', async (req, res) => {
+    try {
+        const taskId = req.params.id;
+        const response = await Task.findByIdAndDelete(taskId,);
+
+        if (!response) {
+            return res.status(404).json({ message: 'Task not found' });
+
+        }
+
+        console.log(response);
+        res.json({ task: response, message: 'Task deleted successfully!' });
+
+    } catch (error) {
+        console.error('Error deleting task ', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+
+
+// To edit existing task ↓
+
+app.patch('/tasks/:id', async (req, res) => {
+    try {
+        const taskId = req.params.id;
+        const { title, description, dueDate, completed } = req.body;
+
+        if (!title || !description || !dueDate) {
+            return res.status(400).json({ Error: 'All fields are required' });
+        }
+
+        const taskData = { title, description, dueDate, completed };
+        const response = await Task.findByIdAndUpdate(taskId, taskData, { new: true });
+
+        if (!response) {
+            return res.status(404).json({ message: 'Task not found' });
+
+        }
+
+        res.status(200).json({ message: 'Update successful', UpdatedTask: response });
+
+
+    } catch (error) {
+        console.error('Error: ', error)
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
 
 
 app.listen(port, () => {

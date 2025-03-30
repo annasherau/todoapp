@@ -76,17 +76,22 @@
                     <p id="weather">Loading...</p>
                 </div>
             </div>
+
             <script>
                 async function fetchdateTime(retry = 2) {
                     try {
-                        let response = await axios.get("https://worldtimeapi.org/api/timezone/Australia/Perth");
-                        console.log("checkpoint C");
-                        if (!response.ok) throw new Error("Failed to fetch");
+                        let response = await fetch("https://worldtimeapi.org/api/timezone/Australia/Perth");
+                        if (!response.ok) throw new Error("Failed to fetch data from WorldTimeAPI");
+
                         let data = await response.json();
-                        console.log("checkpoint A");
-                        let dateTime = new Date(data.dateTime).toLocaleString();
-                        document.getElementById("dateTime").innerText = dateTime;
-                        console.log("checkpoint B");
+                        if (!data.datetime) {
+                            throw new Error("Datetime not found in response.");
+                        }
+
+                        let dateTime = new Date(data.datetime);
+                        let formattedDateTime = dateTime.toLocaleString();
+                        document.getElementById("dateTime").innerText = formattedDateTime;
+
                     } catch (error) {
                         if (retry > 0) {
                             setTimeout(() => fetchdateTime(retry - 1), 2000);
@@ -96,6 +101,8 @@
                     }
                 }
 
+                fetchdateTime();
+
                 async function fetchWeather(retry = 2) {
                     try {
                         let response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=-31.9505&longitude=115.8605&current_weather=true");
@@ -104,6 +111,7 @@
                         document.getElementById("weather").innerText = `Temp: ${data.current_weather.temperature}°C, Wind: ${data.current_weather.windspeed} km/h`;
                     } catch (error) {
                         if (retry > 0) {
+                            console.log(`Retrying... Attempts left: ${retry}`);
                             setTimeout(() => fetchWeather(retry - 1), 2000);
                         } else {
                             document.getElementById("weather").innerText = "Failed to load weather";
@@ -111,7 +119,6 @@
                     }
                 }
 
-                fetchdateTime();
                 fetchWeather();
             </script>
 
